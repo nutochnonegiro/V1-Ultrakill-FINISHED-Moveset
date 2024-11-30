@@ -1,0 +1,1 @@
+-- yo this script was made by loluzidoormanlol on Discord and suggestion was by gyro_ocnovnou._. enjoy
