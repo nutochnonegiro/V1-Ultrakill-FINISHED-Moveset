@@ -1,0 +1,92 @@
+-- Script для Roblox, который воспроизводит монолог и случайные фразы Миноса Прайма.
+
+-- Монолог Миноса Прайма
+local monologue = [[
+Ahh... free at last. 
+O Gabriel, now dawns thy reckoning, and thy gore shall GLISTEN before the temples of Man! 
+Creature of Steel, my gratitude upon thee for my freedom. 
+But the crimes thy kind have committed against humanity are NOT forgotten! 
+And thy punishment... is DEATH.
+]]
+
+-- Список случайных фраз
+local phrases = {
+    "Die!",
+    "Crush!",
+    "Thy end is now!",
+    "Useless!",
+    "Judgement!",
+    "Prepare Thyself!"
+}
+
+-- Переменные управления
+local isChatting = true -- Контроль отправки случайных фраз
+local chatInterval = 30 -- Интервал между фразами (по умолчанию 30 секунд)
+
+-- Функция для выбора случайной фразы
+local function getRandomPhrase()
+    return phrases[math.random(1, #phrases)]
+end
+
+-- Функция для написания текста в чат
+local function sendToChat(message)
+    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(message, "All")
+end
+
+-- Функция для мониторинга здоровья игрока
+local function monitorHealth(player)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local weakMessageSent = false -- Флаг для отслеживания отправки сообщения
+
+    humanoid.HealthChanged:Connect(function(health)
+        if health <= 50 and not weakMessageSent then
+            sendToChat("WEAK")
+            weakMessageSent = true
+        elseif health > 50 then
+            weakMessageSent = false -- Сбрасываем флаг, если здоровье восстановилось
+        end
+    end)
+end
+
+-- Начало скрипта
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Пишем монолог в чат
+for line in monologue:gmatch("[^\n]+") do
+    sendToChat(line)
+    wait(1.5) -- Интервал между строками монолога
+end
+
+-- Начинаем писать случайные фразы
+task.spawn(function()
+    while true do
+        if isChatting then
+            sendToChat(getRandomPhrase())
+        end
+        wait(chatInterval)
+    end
+end)
+
+-- Следим за здоровьем игрока
+monitorHealth(player)
+
+-- Обработка сообщений из чата
+Players.LocalPlayer.Chatted:Connect(function(message)
+    if message == "!stop" then
+        isChatting = false
+        sendToChat("Auto-chat stopped.")
+    elseif message == "!play" then
+        isChatting = true
+        sendToChat("Auto-chat resumed.")
+    elseif message:sub(1, 7) == "!delay " then
+        local newInterval = tonumber(message:sub(8))
+        if newInterval and newInterval > 0 then
+            chatInterval = newInterval
+            sendToChat("Chat interval set to " .. chatInterval .. " seconds.")
+        else
+            sendToChat("Invalid interval. Please enter a positive number.")
+        end
+    end
+end)
